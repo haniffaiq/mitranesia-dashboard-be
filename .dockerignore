@@ -1,0 +1,16 @@
+.env
+.env.*
+.git
+.gitignore
+.pytest_cache
+.venv
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite
+*.sqlite3
+tests/__pycache__/
+app/**/__pycache__/
+alembic/**/__pycache__/

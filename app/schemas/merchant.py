@@ -1,0 +1,100 @@
+from __future__ import annotations
+
+from typing import Literal
+
+from pydantic import BaseModel, Field, HttpUrl, field_validator, model_validator
+
+from app.schemas.common import APIModel
+from app.schemas.image_asset import require_image_source, validate_optional_image_base64
+
+MerchantType = Literal["Self Managed", "Semi-Autopilot", "Full-Autopilot", "Auto Pilot"]
+
+
+class MerchantPackageBase(BaseModel):
+    name: str = Field(min_length=1)
+    price: int = Field(gt=0)
+    description: str = Field(min_length=1)
+    sort_order: int = 0
+
+
+class MerchantPackageCreate(MerchantPackageBase):
+    pass
+
+
+class MerchantPackageUpdate(MerchantPackageBase):
+    id: str | None = None
+
+
+class MerchantPackageRead(APIModel):
+    id: str
+    name: str
+    price: int
+    description: str
+    sort_order: int
+    created_at: str
+    updated_at: str
+
+
+class MerchantBase(BaseModel):
+    name: str = Field(min_length=1)
+    slug: str = Field(min_length=1)
+    category: str = Field(min_length=1)
+    type: MerchantType
+    logo_url: HttpUrl | None = None
+    logo_base64: str | None = None
+    bep_months: int = Field(gt=0)
+    rating: float | None = Field(default=None, ge=0, le=5)
+    is_active: bool = True
+    is_top_merchant: bool = False
+    description: str | None = None
+
+    @field_validator("logo_base64")
+    @classmethod
+    def validate_logo_base64(cls, value: str | None) -> str | None:
+        return validate_optional_image_base64(value)
+
+    @model_validator(mode="after")
+    def validate_logo_source(self) -> "MerchantBase":
+        require_image_source(str(self.logo_url) if self.logo_url else None, self.logo_base64)
+        return self
+
+
+class MerchantCreate(MerchantBase):
+    packages: list[MerchantPackageCreate] = Field(min_length=1)
+
+
+class MerchantUpdate(MerchantBase):
+    packages: list[MerchantPackageUpdate] = Field(min_length=1)
+
+
+class MerchantStatusUpdate(BaseModel):
+    is_active: bool
+
+
+class MerchantRead(APIModel):
+    id: str
+    name: str
+    slug: str
+    category: str
+    type: MerchantType
+    logo_url: str
+    logo_base64: str | None = None
+    bep_months: int
+    rating: float | None = None
+    is_active: bool
+    is_top_merchant: bool
+    description: str | None = None
+    packages: list[MerchantPackageRead]
+    created_at: str
+    updated_at: str
+
+
+class MerchantListQuery(BaseModel):
+    search: str | None = None
+    category: str | None = None
+    type: MerchantType | None = None
+    is_active: bool | None = None
+    page: int = Field(default=1, ge=1)
+    page_size: int = Field(default=10, ge=1, le=100)
+    sort_by: str = "created_at"
+    sort_order: Literal["asc", "desc"] = "desc"

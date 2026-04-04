@@ -1,0 +1,536 @@
+{
+  "info": {
+    "_postman_id": "65073fd8-4963-45ab-9c1f-62066c7a0c70",
+    "name": "Mitra Revamp APIs",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Collection untuk API publik client dan API dashboard admin."
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5001" },
+    { "key": "dashboardUsername", "value": "superadmin" },
+    { "key": "dashboardPassword", "value": "mitranesiawillbeunicorn2026!" },
+    { "key": "dashboardAccessToken", "value": "" },
+    { "key": "clientFullName", "value": "Hanif Client" },
+    { "key": "clientEmail", "value": "hanif.client@example.com" },
+    { "key": "clientPhone", "value": "081234567890" },
+    { "key": "clientPassword", "value": "password123" },
+    { "key": "clientAccessToken", "value": "" },
+    { "key": "merchantId", "value": "" },
+    { "key": "merchantPackageId", "value": "" },
+    { "key": "carouselId", "value": "" },
+    { "key": "insightId", "value": "" },
+    { "key": "adminUserId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Client",
+      "item": [
+        {
+          "name": "Public Data",
+          "item": [
+            {
+              "name": "GET /api/client/home",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/client/home", "host": ["{{baseUrl}}"], "path": ["api", "client", "home"] } }
+            },
+            {
+              "name": "GET /api/client/merchants",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/client/merchants?search=&category=&type=&min_price=&max_price=&recommended=&page=1&page_size=12&sort_by=min_price&sort_order=asc",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "client", "merchants"],
+                  "query": [
+                    { "key": "search", "value": "", "disabled": true },
+                    { "key": "category", "value": "", "disabled": true },
+                    { "key": "type", "value": "", "disabled": true },
+                    { "key": "min_price", "value": "", "disabled": true },
+                    { "key": "max_price", "value": "", "disabled": true },
+                    { "key": "recommended", "value": "", "disabled": true },
+                    { "key": "page", "value": "1" },
+                    { "key": "page_size", "value": "12" },
+                    { "key": "sort_by", "value": "min_price" },
+                    { "key": "sort_order", "value": "asc" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET /api/client/merchants/filters",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/client/merchants/filters", "host": ["{{baseUrl}}"], "path": ["api", "client", "merchants", "filters"] } }
+            },
+            {
+              "name": "GET /api/client/merchants/{id_or_slug}",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/client/merchants/{{merchantId}}", "host": ["{{baseUrl}}"], "path": ["api", "client", "merchants", "{{merchantId}}"] } }
+            },
+            {
+              "name": "GET /api/client/insights",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/client/insights?search=&category=&page=1&page_size=12",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "client", "insights"],
+                  "query": [
+                    { "key": "search", "value": "", "disabled": true },
+                    { "key": "category", "value": "", "disabled": true },
+                    { "key": "page", "value": "1" },
+                    { "key": "page_size", "value": "12" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "GET /api/client/insights/categories",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/client/insights/categories", "host": ["{{baseUrl}}"], "path": ["api", "client", "insights", "categories"] } }
+            },
+            {
+              "name": "GET /api/client/insights/{id_or_slug}",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/client/insights/{{insightId}}", "host": ["{{baseUrl}}"], "path": ["api", "client", "insights", "{{insightId}}"] } }
+            },
+            {
+              "name": "GET /api/client/carousels",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/client/carousels", "host": ["{{baseUrl}}"], "path": ["api", "client", "carousels"] } }
+            }
+          ]
+        },
+        {
+          "name": "Auth",
+          "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{clientAccessToken}}", "type": "string" }] },
+          "item": [
+            {
+              "name": "POST /api/client/auth/register",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"full_name\": \"{{clientFullName}}\",\n  \"email\": \"{{clientEmail}}\",\n  \"phone\": \"{{clientPhone}}\",\n  \"password\": \"{{clientPassword}}\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/client/auth/register", "host": ["{{baseUrl}}"], "path": ["api", "client", "auth", "register"] }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "if (json.access_token) pm.collectionVariables.set('clientAccessToken', json.access_token);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "POST /api/client/auth/login",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{clientEmail}}\",\n  \"password\": \"{{clientPassword}}\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/client/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "client", "auth", "login"] }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "if (json.access_token) pm.collectionVariables.set('clientAccessToken', json.access_token);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "GET /api/client/auth/me",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/client/auth/me", "host": ["{{baseUrl}}"], "path": ["api", "client", "auth", "me"] } }
+            },
+            {
+              "name": "POST /api/client/auth/logout",
+              "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/client/auth/logout", "host": ["{{baseUrl}}"], "path": ["api", "client", "auth", "logout"] } }
+            }
+          ]
+        },
+        {
+          "name": "Leads",
+          "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{clientAccessToken}}", "type": "string" }] },
+          "item": [
+            {
+              "name": "POST /api/client/merchant-inquiries",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"merchant_id\": \"{{merchantId}}\",\n  \"package_name\": \"Starter\",\n  \"inquiry_type\": \"contact\",\n  \"message\": \"Saya tertarik mengetahui detail paket ini.\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/client/merchant-inquiries", "host": ["{{baseUrl}}"], "path": ["api", "client", "merchant-inquiries"] }
+              }
+            },
+            {
+              "name": "POST /api/client/merchant-applications",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"contact_name\": \"{{clientFullName}}\",\n  \"business_name\": \"Kopi Hanif\",\n  \"email\": \"{{clientEmail}}\",\n  \"phone\": \"{{clientPhone}}\",\n  \"category\": \"Food & Beverage\",\n  \"city\": \"Jakarta\",\n  \"message\": \"Saya ingin mendaftarkan bisnis saya ke Mitranesia.\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/client/merchant-applications", "host": ["{{baseUrl}}"], "path": ["api", "client", "merchant-applications"] }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Auth",
+          "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{dashboardAccessToken}}", "type": "string" }] },
+          "item": [
+            {
+              "name": "POST /api/dashboard/auth/login",
+              "request": {
+                "auth": { "type": "noauth" },
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"{{dashboardUsername}}\",\n  \"password\": \"{{dashboardPassword}}\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/dashboard/auth/login", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "auth", "login"] }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "if (json.access_token) pm.collectionVariables.set('dashboardAccessToken', json.access_token);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "GET /api/dashboard/auth/me",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/dashboard/auth/me", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "auth", "me"] } }
+            },
+            {
+              "name": "POST /api/dashboard/auth/logout",
+              "request": { "method": "POST", "url": { "raw": "{{baseUrl}}/api/dashboard/auth/logout", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "auth", "logout"] } }
+            }
+          ]
+        },
+        {
+          "name": "Dashboard Summary",
+          "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{dashboardAccessToken}}", "type": "string" }] },
+          "item": [
+            {
+              "name": "GET /api/dashboard/summary",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/dashboard/summary", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "summary"] } }
+            }
+          ]
+        },
+        {
+          "name": "Merchants",
+          "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{dashboardAccessToken}}", "type": "string" }] },
+          "item": [
+            {
+              "name": "GET /api/dashboard/merchants",
+              "request": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/dashboard/merchants?page=1&page_size=10&sort_by=created_at&sort_order=desc",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "dashboard", "merchants"],
+                  "query": [
+                    { "key": "page", "value": "1" },
+                    { "key": "page_size", "value": "10" },
+                    { "key": "sort_by", "value": "created_at" },
+                    { "key": "sort_order", "value": "desc" }
+                  ]
+                }
+              }
+            },
+            {
+              "name": "POST /api/dashboard/merchants",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Kopi Mitra Test\",\n  \"slug\": \"kopi-mitra-test\",\n  \"category\": \"Food & Beverage\",\n  \"type\": \"Full-Autopilot\",\n  \"logo_url\": \"https://example.com/logo-kopi-mitra-test.png\",\n  \"bep_months\": 12,\n  \"rating\": 4.8,\n  \"is_active\": true,\n  \"is_top_merchant\": true,\n  \"description\": \"Merchant uji untuk Postman collection.\",\n  \"packages\": [\n    {\n      \"name\": \"Starter\",\n      \"price\": 15000000,\n      \"description\": \"Paket awal kemitraan.\",\n      \"sort_order\": 1\n    }\n  ]\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/dashboard/merchants", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "merchants"] }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const json = pm.response.json();",
+                      "if (json.data && json.data.id) pm.collectionVariables.set('merchantId', json.data.id);",
+                      "if (json.data && json.data.packages && json.data.packages.length) pm.collectionVariables.set('merchantPackageId', json.data.packages[0].id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "GET /api/dashboard/merchants/{merchant_id}",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/dashboard/merchants/{{merchantId}}", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "merchants", "{{merchantId}}"] } }
+            },
+            {
+              "name": "PUT /api/dashboard/merchants/{merchant_id}",
+              "request": {
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Kopi Mitra Test Updated\",\n  \"slug\": \"kopi-mitra-test-updated\",\n  \"category\": \"Food & Beverage\",\n  \"type\": \"Semi-Autopilot\",\n  \"logo_url\": \"https://example.com/logo-kopi-mitra-test-updated.png\",\n  \"bep_months\": 10,\n  \"rating\": 4.9,\n  \"is_active\": true,\n  \"is_top_merchant\": false,\n  \"description\": \"Merchant uji yang sudah diperbarui.\",\n  \"packages\": [\n    {\n      \"id\": \"{{merchantPackageId}}\",\n      \"name\": \"Starter Updated\",\n      \"price\": 17500000,\n      \"description\": \"Paket starter yang diperbarui.\",\n      \"sort_order\": 1\n    }\n  ]\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/dashboard/merchants/{{merchantId}}", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "merchants", "{{merchantId}}"] }
+              }
+            },
+            {
+              "name": "PATCH /api/dashboard/merchants/{merchant_id}/status",
+              "request": {
+                "method": "PATCH",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{\n  \"is_active\": false\n}", "options": { "raw": { "language": "json" } } },
+                "url": { "raw": "{{baseUrl}}/api/dashboard/merchants/{{merchantId}}/status", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "merchants", "{{merchantId}}", "status"] }
+              }
+            },
+            {
+              "name": "DELETE /api/dashboard/merchants/{merchant_id}",
+              "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/dashboard/merchants/{{merchantId}}", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "merchants", "{{merchantId}}"] } }
+            }
+          ]
+        },
+        {
+          "name": "Carousels",
+          "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{dashboardAccessToken}}", "type": "string" }] },
+          "item": [
+            {
+              "name": "GET /api/dashboard/carousels",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/dashboard/carousels?page=1&page_size=10", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "carousels"], "query": [{ "key": "page", "value": "1" }, { "key": "page_size", "value": "10" }] } }
+            },
+            {
+              "name": "POST /api/dashboard/carousels",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Bisnis Autopilot Postman\",\n  \"image_url\": \"https://example.com/carousel-postman.png\",\n  \"tag\": \"Trending\",\n  \"icon\": \"trending-up\",\n  \"highlight\": \"ROI Tinggi\",\n  \"description\": \"Slide carousel untuk pengujian Postman.\",\n  \"color\": \"from-primary/95 via-primary/60\",\n  \"cta_label\": \"Pelajari Lebih Lanjut\",\n  \"cta_href\": \"/merchants\",\n  \"sort_order\": 4,\n  \"is_active\": true\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/dashboard/carousels", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "carousels"] }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": ["const json = pm.response.json();", "if (json.data && json.data.id) pm.collectionVariables.set('carouselId', json.data.id);"]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "GET /api/dashboard/carousels/{carousel_id}",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/dashboard/carousels/{{carouselId}}", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "carousels", "{{carouselId}}"] } }
+            },
+            {
+              "name": "PUT /api/dashboard/carousels/{carousel_id}",
+              "request": {
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Bisnis Autopilot Postman Updated\",\n  \"image_url\": \"https://example.com/carousel-postman-updated.png\",\n  \"tag\": \"Featured\",\n  \"icon\": \"coffee\",\n  \"highlight\": \"Growth Cepat\",\n  \"description\": \"Slide carousel yang sudah diperbarui.\",\n  \"color\": \"from-amber-900/95 via-amber-800/60\",\n  \"cta_label\": \"Lihat Merchant\",\n  \"cta_href\": \"/merchants?category=Food%20%26%20Beverage\",\n  \"sort_order\": 5,\n  \"is_active\": true\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/dashboard/carousels/{{carouselId}}", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "carousels", "{{carouselId}}"] }
+              }
+            },
+            {
+              "name": "PATCH /api/dashboard/carousels/{carousel_id}/status",
+              "request": {
+                "method": "PATCH",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{\n  \"is_active\": false\n}", "options": { "raw": { "language": "json" } } },
+                "url": { "raw": "{{baseUrl}}/api/dashboard/carousels/{{carouselId}}/status", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "carousels", "{{carouselId}}", "status"] }
+              }
+            },
+            {
+              "name": "DELETE /api/dashboard/carousels/{carousel_id}",
+              "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/dashboard/carousels/{{carouselId}}", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "carousels", "{{carouselId}}"] } }
+            }
+          ]
+        },
+        {
+          "name": "Insights",
+          "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{dashboardAccessToken}}", "type": "string" }] },
+          "item": [
+            {
+              "name": "GET /api/dashboard/insights",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/dashboard/insights?page=1&page_size=10", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "insights"], "query": [{ "key": "page", "value": "1" }, { "key": "page_size", "value": "10" }] } }
+            },
+            {
+              "name": "POST /api/dashboard/insights",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Strategi Ekspansi Mitra Test\",\n  \"slug\": \"strategi-ekspansi-mitra-test\",\n  \"category\": \"Business\",\n  \"author\": \"Postman\",\n  \"image\": \"https://example.com/insight-mitra-test.png\",\n  \"excerpt\": \"Insight uji untuk memastikan endpoint article berjalan.\",\n  \"read_time\": \"5 min read\",\n  \"content\": [\"Paragraf pembuka insight.\", \"Paragraf lanjutan insight.\"],\n  \"status\": \"draft\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/dashboard/insights", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "insights"] }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": ["const json = pm.response.json();", "if (json.data && json.data.id) pm.collectionVariables.set('insightId', json.data.id);"]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "GET /api/dashboard/insights/{article_id}",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/dashboard/insights/{{insightId}}", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "insights", "{{insightId}}"] } }
+            },
+            {
+              "name": "PUT /api/dashboard/insights/{article_id}",
+              "request": {
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Strategi Ekspansi Mitra Test Updated\",\n  \"slug\": \"strategi-ekspansi-mitra-test-updated\",\n  \"category\": \"Business\",\n  \"author\": \"Postman Updated\",\n  \"image\": \"https://example.com/insight-mitra-test-updated.png\",\n  \"excerpt\": \"Insight uji yang diperbarui.\",\n  \"read_time\": \"6 min read\",\n  \"content\": [\"Konten update pertama.\", \"Konten update kedua.\"],\n  \"status\": \"published\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/dashboard/insights/{{insightId}}", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "insights", "{{insightId}}"] }
+              }
+            },
+            {
+              "name": "PATCH /api/dashboard/insights/{article_id}/status",
+              "request": {
+                "method": "PATCH",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{\n  \"status\": \"archived\"\n}", "options": { "raw": { "language": "json" } } },
+                "url": { "raw": "{{baseUrl}}/api/dashboard/insights/{{insightId}}/status", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "insights", "{{insightId}}", "status"] }
+              }
+            },
+            {
+              "name": "DELETE /api/dashboard/insights/{article_id}",
+              "request": { "method": "DELETE", "url": { "raw": "{{baseUrl}}/api/dashboard/insights/{{insightId}}", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "insights", "{{insightId}}"] } }
+            }
+          ]
+        },
+        {
+          "name": "Admin Users",
+          "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{dashboardAccessToken}}", "type": "string" }] },
+          "item": [
+            {
+              "name": "GET /api/dashboard/admin-users",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/dashboard/admin-users?page=1&page_size=10", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "admin-users"], "query": [{ "key": "page", "value": "1" }, { "key": "page_size", "value": "10" }] } }
+            },
+            {
+              "name": "POST /api/dashboard/admin-users",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"editor.postman\",\n  \"password\": \"postmanpass123\",\n  \"role\": \"editor\",\n  \"is_active\": true\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/dashboard/admin-users", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "admin-users"] }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": ["const json = pm.response.json();", "if (json.data && json.data.id) pm.collectionVariables.set('adminUserId', json.data.id);"]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "GET /api/dashboard/admin-users/{user_id}",
+              "request": { "method": "GET", "url": { "raw": "{{baseUrl}}/api/dashboard/admin-users/{{adminUserId}}", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "admin-users", "{{adminUserId}}"] } }
+            },
+            {
+              "name": "PUT /api/dashboard/admin-users/{user_id}",
+              "request": {
+                "method": "PUT",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"username\": \"editor.postman.updated\",\n  \"role\": \"admin\",\n  \"is_active\": true\n}",
+                  "options": { "raw": { "language": "json" } }
+                },
+                "url": { "raw": "{{baseUrl}}/api/dashboard/admin-users/{{adminUserId}}", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "admin-users", "{{adminUserId}}"] }
+              }
+            },
+            {
+              "name": "PATCH /api/dashboard/admin-users/{user_id}/status",
+              "request": {
+                "method": "PATCH",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{\n  \"is_active\": false\n}", "options": { "raw": { "language": "json" } } },
+                "url": { "raw": "{{baseUrl}}/api/dashboard/admin-users/{{adminUserId}}/status", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "admin-users", "{{adminUserId}}", "status"] }
+              }
+            },
+            {
+              "name": "POST /api/dashboard/admin-users/{user_id}/reset-password",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": { "mode": "raw", "raw": "{\n  \"new_password\": \"postmanpass456\"\n}", "options": { "raw": { "language": "json" } } },
+                "url": { "raw": "{{baseUrl}}/api/dashboard/admin-users/{{adminUserId}}/reset-password", "host": ["{{baseUrl}}"], "path": ["api", "dashboard", "admin-users", "{{adminUserId}}", "reset-password"] }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
