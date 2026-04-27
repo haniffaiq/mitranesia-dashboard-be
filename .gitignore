@@ -1,5 +1,16 @@
 .env
-.pytest_cache
+.env.local
+.env.*.local
 .venv
+.pytest_cache
 __pycache__
+*.pyc
+*.pyo
+*.egg-info
 *.db
+.DS_Store
+.idea
+.vscode
+*.log
+dist
+build
