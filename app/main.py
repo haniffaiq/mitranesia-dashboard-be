@@ -16,6 +16,7 @@ from app.api.routes_client_leads import router as client_leads_router
 from app.api.routes_dashboard import router as dashboard_router
 from app.api.routes_insights import router as insights_router
 from app.api.routes_merchants import router as merchants_router
+from app.api.routes_sitemap import router as sitemap_router
 from app.core.config import Settings, get_settings
 from app.core.rate_limit import LoginRateLimiter
 from app.db.base import Base
@@ -75,6 +76,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(merchants_router, prefix="/api")
     app.include_router(insights_router, prefix="/api")
     app.include_router(admin_users_router, prefix="/api")
+    app.include_router(sitemap_router)  # no /api prefix — served at root
     return app
 
 
