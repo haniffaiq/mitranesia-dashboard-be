@@ -22,6 +22,7 @@ class Merchant(TimestampMixin, Base):
     rating: Mapped[Decimal | None] = mapped_column(Numeric(2, 1), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
     is_top_merchant: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
+    is_official_partner: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     packages = relationship(

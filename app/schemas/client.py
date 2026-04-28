@@ -18,6 +18,7 @@ class ClientMerchant(APIModel):
     logoUrl: str
     bepMonths: int
     isTopMerchant: bool = False
+    isOfficialPartner: bool = False
     rating: float | None = None
     type: str
     packages: list[ClientMerchantPackage]

@@ -63,6 +63,7 @@ def serialize_client_merchant(model: Merchant) -> ClientMerchant:
         logoUrl=resolve_image_source(model.logo_url, model.logo_base64),
         bepMonths=model.bep_months,
         isTopMerchant=model.is_top_merchant,
+        isOfficialPartner=model.is_official_partner,
         rating=rating,
         type=model.type,
         packages=packages,

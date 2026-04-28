@@ -45,6 +45,7 @@ def serialize_merchant(model: Merchant) -> MerchantRead:
         rating=rating,
         is_active=model.is_active,
         is_top_merchant=model.is_top_merchant,
+        is_official_partner=model.is_official_partner,
         description=model.description,
         packages=[serialize_package(pkg) for pkg in model.packages],
         created_at=iso(model.created_at) or "",

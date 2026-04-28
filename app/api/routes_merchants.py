@@ -121,6 +121,7 @@ def create_merchant(payload: MerchantCreate, db: Session = Depends(get_db)):
         rating=payload.rating,
         is_active=payload.is_active,
         is_top_merchant=payload.is_top_merchant,
+        is_official_partner=payload.is_official_partner,
         description=payload.description,
         packages=[
             MerchantPackage(
@@ -159,6 +160,7 @@ def update_merchant(merchant_id: uuid.UUID, payload: MerchantUpdate, db: Session
     merchant.rating = payload.rating
     merchant.is_active = payload.is_active
     merchant.is_top_merchant = payload.is_top_merchant
+    merchant.is_official_partner = payload.is_official_partner
     merchant.description = payload.description
     sync_packages(merchant, payload.packages)
 

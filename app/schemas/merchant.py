@@ -46,6 +46,7 @@ class MerchantBase(BaseModel):
     rating: float | None = Field(default=None, ge=0, le=5)
     is_active: bool = True
     is_top_merchant: bool = False
+    is_official_partner: bool = False
     description: str | None = None
 
     @field_validator("logo_base64")
@@ -83,6 +84,7 @@ class MerchantRead(APIModel):
     rating: float | None = None
     is_active: bool
     is_top_merchant: bool
+    is_official_partner: bool
     description: str | None = None
     packages: list[MerchantPackageRead]
     created_at: str
