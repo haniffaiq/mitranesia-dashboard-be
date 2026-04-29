@@ -23,7 +23,7 @@ def get_dashboard_summary(db: Session) -> DashboardSummary:
         select(Merchant.type, func.count()).group_by(Merchant.type).order_by(func.count().desc(), Merchant.type.asc())
     ).all()
     latest_merchants = db.scalars(
-        select(Merchant).options(selectinload(Merchant.packages)).order_by(Merchant.created_at.desc()).limit(5)
+        select(Merchant).options(selectinload(Merchant.packages), selectinload(Merchant.images)).order_by(Merchant.created_at.desc()).limit(5)
     ).all()
 
     return DashboardSummary(

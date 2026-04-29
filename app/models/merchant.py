@@ -31,3 +31,9 @@ class Merchant(TimestampMixin, Base):
         cascade="all, delete-orphan",
         order_by="MerchantPackage.sort_order",
     )
+    images = relationship(
+        "MerchantImage",
+        back_populates="merchant",
+        cascade="all, delete-orphan",
+        order_by="MerchantImage.sort_order",
+    )

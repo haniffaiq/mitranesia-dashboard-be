@@ -7,12 +7,13 @@ from app.models.admin_user import AdminUser
 from app.models.carousel_item import CarouselItem
 from app.models.insight_article import InsightArticle
 from app.models.merchant import Merchant
+from app.models.merchant_image import MerchantImage
 from app.models.merchant_package import MerchantPackage
 from app.schemas.admin_user import AdminUserRead
 from app.schemas.auth import AuthUser
 from app.schemas.carousel import CarouselItemRead
 from app.schemas.insight import InsightArticleRead
-from app.schemas.merchant import MerchantPackageRead, MerchantRead
+from app.schemas.merchant import MerchantImageRead, MerchantPackageRead, MerchantRead
 
 
 def iso(value: datetime | None) -> str | None:
@@ -25,6 +26,18 @@ def serialize_package(model: MerchantPackage) -> MerchantPackageRead:
         name=model.name,
         price=model.price,
         description=model.description,
+        sort_order=model.sort_order,
+        created_at=iso(model.created_at) or "",
+        updated_at=iso(model.updated_at) or "",
+    )
+
+
+def serialize_merchant_image(model: MerchantImage) -> MerchantImageRead:
+    return MerchantImageRead(
+        id=str(model.id),
+        label=model.label,
+        image_url=model.image_url,
+        image_base64=model.image_base64,
         sort_order=model.sort_order,
         created_at=iso(model.created_at) or "",
         updated_at=iso(model.updated_at) or "",
@@ -48,6 +61,7 @@ def serialize_merchant(model: Merchant) -> MerchantRead:
         is_official_partner=model.is_official_partner,
         description=model.description,
         packages=[serialize_package(pkg) for pkg in model.packages],
+        images=[serialize_merchant_image(img) for img in model.images],
         created_at=iso(model.created_at) or "",
         updated_at=iso(model.updated_at) or "",
     )

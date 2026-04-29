@@ -35,6 +35,41 @@ class MerchantPackageRead(APIModel):
     updated_at: str
 
 
+class MerchantImageBase(BaseModel):
+    label: str | None = None
+    image_url: HttpUrl | None = None
+    image_base64: str | None = None
+    sort_order: int = 0
+
+    @field_validator("image_base64")
+    @classmethod
+    def validate_image_base64(cls, value: str | None) -> str | None:
+        return validate_optional_image_base64(value)
+
+    @model_validator(mode="after")
+    def validate_image_source(self) -> "MerchantImageBase":
+        require_image_source(str(self.image_url) if self.image_url else None, self.image_base64)
+        return self
+
+
+class MerchantImageCreate(MerchantImageBase):
+    pass
+
+
+class MerchantImageUpdate(MerchantImageBase):
+    id: str | None = None
+
+
+class MerchantImageRead(APIModel):
+    id: str
+    label: str | None = None
+    image_url: str | None = None
+    image_base64: str | None = None
+    sort_order: int
+    created_at: str
+    updated_at: str
+
+
 class MerchantBase(BaseModel):
     name: str = Field(min_length=1)
     slug: str = Field(min_length=1)
@@ -62,10 +97,12 @@ class MerchantBase(BaseModel):
 
 class MerchantCreate(MerchantBase):
     packages: list[MerchantPackageCreate] = Field(min_length=1)
+    images: list[MerchantImageCreate] = Field(default_factory=list, max_length=3)
 
 
 class MerchantUpdate(MerchantBase):
     packages: list[MerchantPackageUpdate] = Field(min_length=1)
+    images: list[MerchantImageUpdate] = Field(default_factory=list, max_length=3)
 
 
 class MerchantStatusUpdate(BaseModel):
@@ -87,6 +124,7 @@ class MerchantRead(APIModel):
     is_official_partner: bool
     description: str | None = None
     packages: list[MerchantPackageRead]
+    images: list[MerchantImageRead] = []
     created_at: str
     updated_at: str
 

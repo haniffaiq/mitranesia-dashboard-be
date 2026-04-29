@@ -10,6 +10,12 @@ class ClientMerchantPackage(APIModel):
     description: str
 
 
+class ClientMerchantImage(APIModel):
+    id: str
+    label: str | None = None
+    url: str
+
+
 class ClientMerchant(APIModel):
     id: str
     name: str
@@ -22,6 +28,7 @@ class ClientMerchant(APIModel):
     rating: float | None = None
     type: str
     packages: list[ClientMerchantPackage]
+    images: list[ClientMerchantImage] = []
     minPrice: int
     maxPrice: int
 

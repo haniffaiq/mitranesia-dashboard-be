@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.dependencies.auth import get_db, require_roles
 from app.models.merchant import Merchant
+from app.models.merchant_image import MerchantImage
 from app.models.merchant_package import MerchantPackage
 from app.schemas.common import DetailResponse, ListResponse, MetaData
 from app.schemas.merchant import MerchantCreate, MerchantRead, MerchantStatusUpdate, MerchantUpdate
@@ -26,7 +27,11 @@ ALLOWED_SORT_FIELDS = {
 
 
 def get_merchant_or_404(db: Session, merchant_id: uuid.UUID) -> Merchant:
-    merchant = db.scalar(select(Merchant).options(selectinload(Merchant.packages)).where(Merchant.id == merchant_id))
+    merchant = db.scalar(
+        select(Merchant)
+        .options(selectinload(Merchant.packages), selectinload(Merchant.images))
+        .where(Merchant.id == merchant_id)
+    )
     if not merchant:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Merchant not found")
     return merchant
@@ -67,6 +72,34 @@ def sync_packages(merchant: Merchant, packages_payload: list) -> None:
     merchant.packages[:] = kept
 
 
+def sync_images(merchant: Merchant, images_payload: list) -> None:
+    existing_by_id = {str(item.id): item for item in merchant.images}
+    kept: list[MerchantImage] = []
+
+    for item in images_payload:
+        item_id = getattr(item, "id", None)
+        if item_id:
+            image = existing_by_id.pop(item_id, None)
+            if not image:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"Image {item_id} not found")
+            image.label = item.label
+            image.image_url = str(item.image_url) if item.image_url else None
+            image.image_base64 = item.image_base64
+            image.sort_order = item.sort_order
+            kept.append(image)
+        else:
+            kept.append(
+                MerchantImage(
+                    label=item.label,
+                    image_url=str(item.image_url) if item.image_url else None,
+                    image_base64=item.image_base64,
+                    sort_order=item.sort_order,
+                )
+            )
+
+    merchant.images[:] = kept
+
+
 @router.get("", response_model=ListResponse[MerchantRead], dependencies=[Depends(require_roles("superadmin", "admin"))])
 def list_merchants(
     search: str | None = None,
@@ -83,7 +116,7 @@ def list_merchants(
     if sort_column is None:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Invalid sort_by field")
 
-    query = select(Merchant).options(selectinload(Merchant.packages))
+    query = select(Merchant).options(selectinload(Merchant.packages), selectinload(Merchant.images))
     count_query = select(func.count()).select_from(Merchant)
 
     if search:
@@ -132,6 +165,15 @@ def create_merchant(payload: MerchantCreate, db: Session = Depends(get_db)):
             )
             for item in payload.packages
         ],
+        images=[
+            MerchantImage(
+                label=item.label,
+                image_url=str(item.image_url) if item.image_url else None,
+                image_base64=item.image_base64,
+                sort_order=item.sort_order,
+            )
+            for item in payload.images
+        ],
     )
     db.add(merchant)
     db.commit()
@@ -163,6 +205,7 @@ def update_merchant(merchant_id: uuid.UUID, payload: MerchantUpdate, db: Session
     merchant.is_official_partner = payload.is_official_partner
     merchant.description = payload.description
     sync_packages(merchant, payload.packages)
+    sync_images(merchant, payload.images)
 
     db.commit()
     db.refresh(merchant)

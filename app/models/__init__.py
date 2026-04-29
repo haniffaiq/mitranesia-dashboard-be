@@ -5,6 +5,7 @@ from app.models.client_merchant_inquiry import ClientMerchantInquiry
 from app.models.client_user import ClientUser
 from app.models.insight_article import InsightArticle
 from app.models.merchant import Merchant
+from app.models.merchant_image import MerchantImage
 from app.models.merchant_package import MerchantPackage
 
 __all__ = [
@@ -15,5 +16,6 @@ __all__ = [
     "ClientUser",
     "InsightArticle",
     "Merchant",
+    "MerchantImage",
     "MerchantPackage",
 ]

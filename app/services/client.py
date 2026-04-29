@@ -16,6 +16,7 @@ from app.schemas.client import (
     ClientHome,
     ClientInsightArticle,
     ClientMerchant,
+    ClientMerchantImage,
     ClientMerchantPackage,
     ClientMerchantsFilters,
 )
@@ -53,6 +54,15 @@ def serialize_client_merchant(model: Merchant) -> ClientMerchant:
         )
         for item in model.packages
     ]
+    images = [
+        ClientMerchantImage(
+            id=str(img.id),
+            label=img.label,
+            url=resolve_image_source(img.image_url, img.image_base64),
+        )
+        for img in model.images
+        if resolve_image_source(img.image_url, img.image_base64)
+    ]
     prices = [item.price for item in model.packages]
     rating = float(model.rating) if isinstance(model.rating, Decimal) else model.rating
     return ClientMerchant(
@@ -67,6 +77,7 @@ def serialize_client_merchant(model: Merchant) -> ClientMerchant:
         rating=rating,
         type=model.type,
         packages=packages,
+        images=images,
         minPrice=min(prices) if prices else 0,
         maxPrice=max(prices) if prices else 0,
     )
@@ -107,7 +118,7 @@ def get_active_merchants(db: Session) -> list[Merchant]:
     return (
         db.scalars(
             select(Merchant)
-            .options(selectinload(Merchant.packages))
+            .options(selectinload(Merchant.packages), selectinload(Merchant.images))
             .where(Merchant.is_active.is_(True))
             .order_by(Merchant.created_at.desc())
         )
@@ -145,7 +156,7 @@ def build_merchant_filters(merchants: list[Merchant]) -> ClientMerchantsFilters:
 
 
 def find_client_merchant(db: Session, identifier: str) -> Merchant | None:
-    statement = select(Merchant).options(selectinload(Merchant.packages))
+    statement = select(Merchant).options(selectinload(Merchant.packages), selectinload(Merchant.images))
     try:
         merchant_id = uuid.UUID(identifier)
         return db.scalar(statement.where(Merchant.id == merchant_id))
