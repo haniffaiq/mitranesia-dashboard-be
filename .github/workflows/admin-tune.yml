@@ -2,11 +2,9 @@ name: VPS admin tune
 
 on:
   workflow_dispatch:
-    inputs:
-      whitelist_ip:
-        description: "IP/CIDR untuk masuk fail2ban ignoreip (kosong = skip)"
-        required: false
-        default: "112.215.171.70"
+  push:
+    paths:
+      - ".triggers/fail2ban-tune"
 
 jobs:
   tune:
@@ -26,7 +24,7 @@ jobs:
         env:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
-          WHITELIST_IP: ${{ github.event.inputs.whitelist_ip }}
+          WHITELIST_IP: "112.215.171.70"
         run: |
           ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" \
             "set -e
