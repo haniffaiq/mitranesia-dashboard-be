@@ -64,9 +64,28 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     async def value_error_handler(_: Request, exc: ValueError):
         return JSONResponse(status_code=422, content={"message": "Validation error", "errors": {"body": [str(exc)]}})
 
+    import time as _time
+    from sqlalchemy import text as _sa_text
+
+    app.state.boot_time = _time.time()
+
     @app.get("/health")
     def health():
-        return {"status": "ok"}
+        body: dict = {
+            "status": "ok",
+            "version": "0.1.0",
+            "uptime_seconds": int(_time.time() - app.state.boot_time),
+        }
+        try:
+            with app.state.session_local() as db:
+                db.execute(_sa_text("SELECT 1"))
+                alembic_row = db.execute(_sa_text("SELECT version_num FROM alembic_version LIMIT 1")).first()
+                body["db"] = "ok"
+                body["alembic"] = alembic_row[0] if alembic_row else None
+        except Exception as exc:
+            body["status"] = "degraded"
+            body["db"] = f"error: {type(exc).__name__}"
+        return body
 
     app.include_router(auth_router, prefix="/api")
     app.include_router(client_router, prefix="/api")
