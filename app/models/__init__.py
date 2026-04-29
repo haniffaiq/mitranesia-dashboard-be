@@ -7,6 +7,7 @@ from app.models.insight_article import InsightArticle
 from app.models.merchant import Merchant
 from app.models.merchant_image import MerchantImage
 from app.models.merchant_package import MerchantPackage
+from app.models.newsletter_subscriber import NewsletterSubscriber
 
 __all__ = [
     "AdminUser",
@@ -18,4 +19,5 @@ __all__ = [
     "Merchant",
     "MerchantImage",
     "MerchantPackage",
+    "NewsletterSubscriber",
 ]
