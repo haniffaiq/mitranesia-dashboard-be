@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select, text
 from sqlalchemy.orm import Session, selectinload
 
 from app.dependencies.auth import get_db, require_roles
@@ -26,12 +26,15 @@ ALLOWED_SORT_FIELDS = {
 }
 
 
-def get_merchant_or_404(db: Session, merchant_id: uuid.UUID) -> Merchant:
-    merchant = db.scalar(
+def get_merchant_or_404(db: Session, merchant_id: uuid.UUID, include_deleted: bool = False) -> Merchant:
+    statement = (
         select(Merchant)
         .options(selectinload(Merchant.packages), selectinload(Merchant.images))
         .where(Merchant.id == merchant_id)
     )
+    if not include_deleted:
+        statement = statement.where(Merchant.deleted_at.is_(None))
+    merchant = db.scalar(statement)
     if not merchant:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Merchant not found")
     return merchant
@@ -116,12 +119,24 @@ def list_merchants(
     if sort_column is None:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Invalid sort_by field")
 
-    query = select(Merchant).options(selectinload(Merchant.packages), selectinload(Merchant.images))
-    count_query = select(func.count()).select_from(Merchant)
+    query = (
+        select(Merchant)
+        .options(selectinload(Merchant.packages), selectinload(Merchant.images))
+        .where(Merchant.deleted_at.is_(None))
+    )
+    count_query = select(func.count()).select_from(Merchant).where(Merchant.deleted_at.is_(None))
 
     if search:
         term = f"%{search.lower()}%"
-        criteria = func.lower(Merchant.name).like(term) | func.lower(Merchant.slug).like(term)
+        fts_expr = text(
+            "to_tsvector('simple', coalesce(merchants.name,'') || ' ' || coalesce(merchants.slug,'') || ' ' || "
+            "coalesce(merchants.category,'') || ' ' || coalesce(merchants.description,'')) @@ plainto_tsquery('simple', :search)"
+        ).bindparams(search=search)
+        criteria = or_(
+            func.lower(Merchant.name).like(term),
+            func.lower(Merchant.slug).like(term),
+            fts_expr,
+        )
         query = query.where(criteria)
         count_query = count_query.where(criteria)
     if category:
@@ -225,5 +240,46 @@ def update_merchant_status(merchant_id: uuid.UUID, payload: MerchantStatusUpdate
 @router.delete("/{merchant_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_roles("superadmin", "admin"))])
 def delete_merchant(merchant_id: uuid.UUID, db: Session = Depends(get_db)):
     merchant = get_merchant_or_404(db, merchant_id)
+    from datetime import datetime, timezone
+
+    merchant.deleted_at = datetime.now(timezone.utc)
+    db.commit()
+
+
+@router.get("/trash/list", response_model=ListResponse[MerchantRead], dependencies=[Depends(require_roles("superadmin", "admin"))])
+def list_trashed_merchants(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    query = (
+        select(Merchant)
+        .options(selectinload(Merchant.packages), selectinload(Merchant.images))
+        .where(Merchant.deleted_at.is_not(None))
+        .order_by(Merchant.deleted_at.desc())
+    )
+    count_query = select(func.count()).select_from(Merchant).where(Merchant.deleted_at.is_not(None))
+    total = db.scalar(count_query) or 0
+    merchants = db.scalars(query.offset((page - 1) * page_size).limit(page_size)).all()
+    return ListResponse(
+        data=[serialize_merchant(item) for item in merchants],
+        meta=MetaData.from_pagination(page, page_size, total),
+    )
+
+
+@router.post("/{merchant_id}/restore", response_model=DetailResponse[MerchantRead], dependencies=[Depends(require_roles("superadmin", "admin"))])
+def restore_merchant(merchant_id: uuid.UUID, db: Session = Depends(get_db)):
+    merchant = get_merchant_or_404(db, merchant_id, include_deleted=True)
+    if merchant.deleted_at is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Merchant not deleted")
+    merchant.deleted_at = None
+    db.commit()
+    db.refresh(merchant)
+    return DetailResponse(data=serialize_merchant(get_merchant_or_404(db, merchant_id)))
+
+
+@router.delete("/{merchant_id}/hard", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_roles("superadmin"))])
+def hard_delete_merchant(merchant_id: uuid.UUID, db: Session = Depends(get_db)):
+    merchant = get_merchant_or_404(db, merchant_id, include_deleted=True)
     db.delete(merchant)
     db.commit()

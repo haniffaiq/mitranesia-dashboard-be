@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Integer, Numeric, String, Text
+from datetime import datetime
+
+from sqlalchemy import Boolean, DateTime, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -24,6 +26,7 @@ class Merchant(TimestampMixin, Base):
     is_top_merchant: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     is_official_partner: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default="false")
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     packages = relationship(
         "MerchantPackage",

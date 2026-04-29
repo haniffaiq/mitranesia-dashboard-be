@@ -119,7 +119,7 @@ def get_active_merchants(db: Session) -> list[Merchant]:
         db.scalars(
             select(Merchant)
             .options(selectinload(Merchant.packages), selectinload(Merchant.images))
-            .where(Merchant.is_active.is_(True))
+            .where(Merchant.is_active.is_(True), Merchant.deleted_at.is_(None))
             .order_by(Merchant.created_at.desc())
         )
         .unique()
@@ -130,7 +130,7 @@ def get_active_merchants(db: Session) -> list[Merchant]:
 def get_published_insights(db: Session) -> list[InsightArticle]:
     return db.scalars(
         select(InsightArticle)
-        .where(InsightArticle.status == "published")
+        .where(InsightArticle.status == "published", InsightArticle.deleted_at.is_(None))
         .order_by(InsightArticle.published_at.desc(), InsightArticle.created_at.desc())
     ).all()
 
@@ -156,7 +156,11 @@ def build_merchant_filters(merchants: list[Merchant]) -> ClientMerchantsFilters:
 
 
 def find_client_merchant(db: Session, identifier: str) -> Merchant | None:
-    statement = select(Merchant).options(selectinload(Merchant.packages), selectinload(Merchant.images))
+    statement = (
+        select(Merchant)
+        .options(selectinload(Merchant.packages), selectinload(Merchant.images))
+        .where(Merchant.deleted_at.is_(None))
+    )
     try:
         merchant_id = uuid.UUID(identifier)
         return db.scalar(statement.where(Merchant.id == merchant_id))
@@ -165,7 +169,9 @@ def find_client_merchant(db: Session, identifier: str) -> Merchant | None:
 
 
 def find_client_insight(db: Session, identifier: str) -> InsightArticle | None:
-    statement = select(InsightArticle).where(InsightArticle.status == "published")
+    statement = select(InsightArticle).where(
+        InsightArticle.status == "published", InsightArticle.deleted_at.is_(None)
+    )
     try:
         article_id = uuid.UUID(identifier)
         return db.scalar(statement.where(InsightArticle.id == article_id))

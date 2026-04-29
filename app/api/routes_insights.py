@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select, text
 from sqlalchemy.orm import Session
 
 from app.dependencies.auth import get_db, require_roles
@@ -16,9 +16,11 @@ from app.services.serializers import serialize_insight
 router = APIRouter(prefix="/dashboard/insights", tags=["dashboard-insights"])
 
 
-def get_article_or_404(db: Session, article_id: uuid.UUID) -> InsightArticle:
+def get_article_or_404(db: Session, article_id: uuid.UUID, include_deleted: bool = False) -> InsightArticle:
     article = db.get(InsightArticle, article_id)
     if not article:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Insight article not found")
+    if not include_deleted and article.deleted_at is not None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Insight article not found")
     return article
 
@@ -48,12 +50,20 @@ def list_insights(
     page_size: int = Query(default=10, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
-    query = select(InsightArticle)
-    count_query = select(func.count()).select_from(InsightArticle)
+    query = select(InsightArticle).where(InsightArticle.deleted_at.is_(None))
+    count_query = select(func.count()).select_from(InsightArticle).where(InsightArticle.deleted_at.is_(None))
 
     if search:
         term = f"%{search.lower()}%"
-        criteria = func.lower(InsightArticle.title).like(term) | func.lower(InsightArticle.slug).like(term)
+        fts_expr = text(
+            "to_tsvector('simple', coalesce(insight_articles.title,'') || ' ' || coalesce(insight_articles.slug,'') || ' ' || "
+            "coalesce(insight_articles.category,'') || ' ' || coalesce(insight_articles.excerpt,'')) @@ plainto_tsquery('simple', :search)"
+        ).bindparams(search=search)
+        criteria = or_(
+            func.lower(InsightArticle.title).like(term),
+            func.lower(InsightArticle.slug).like(term),
+            fts_expr,
+        )
         query = query.where(criteria)
         count_query = count_query.where(criteria)
     if category:
@@ -128,5 +138,36 @@ def update_insight_status(article_id: uuid.UUID, payload: InsightStatusUpdate, d
 @router.delete("/{article_id}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_roles("superadmin", "admin", "editor"))])
 def delete_insight(article_id: uuid.UUID, db: Session = Depends(get_db)):
     article = get_article_or_404(db, article_id)
+    article.deleted_at = datetime.now(timezone.utc)
+    db.commit()
+
+
+@router.get("/trash/list", response_model=ListResponse[InsightArticleRead], dependencies=[Depends(require_roles("superadmin", "admin", "editor"))])
+def list_trashed_insights(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    query = select(InsightArticle).where(InsightArticle.deleted_at.is_not(None)).order_by(InsightArticle.deleted_at.desc())
+    count_query = select(func.count()).select_from(InsightArticle).where(InsightArticle.deleted_at.is_not(None))
+    total = db.scalar(count_query) or 0
+    rows = db.scalars(query.offset((page - 1) * page_size).limit(page_size)).all()
+    return ListResponse(data=[serialize_insight(item) for item in rows], meta=MetaData.from_pagination(page, page_size, total))
+
+
+@router.post("/{article_id}/restore", response_model=DetailResponse[InsightArticleRead], dependencies=[Depends(require_roles("superadmin", "admin", "editor"))])
+def restore_insight(article_id: uuid.UUID, db: Session = Depends(get_db)):
+    article = get_article_or_404(db, article_id, include_deleted=True)
+    if article.deleted_at is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Insight not deleted")
+    article.deleted_at = None
+    db.commit()
+    db.refresh(article)
+    return DetailResponse(data=serialize_insight(article))
+
+
+@router.delete("/{article_id}/hard", status_code=status.HTTP_204_NO_CONTENT, dependencies=[Depends(require_roles("superadmin"))])
+def hard_delete_insight(article_id: uuid.UUID, db: Session = Depends(get_db)):
+    article = get_article_or_404(db, article_id, include_deleted=True)
     db.delete(article)
     db.commit()
