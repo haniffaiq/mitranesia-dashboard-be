@@ -1,0 +1,50 @@
+name: VPS admin tune
+
+on:
+  workflow_dispatch:
+    inputs:
+      whitelist_ip:
+        description: "IP/CIDR untuk masuk fail2ban ignoreip (kosong = skip)"
+        required: false
+        default: "112.215.171.70"
+
+jobs:
+  tune:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Tune fail2ban + unban
+        env:
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          WHITELIST_IP: ${{ github.event.inputs.whitelist_ip }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no "$VPS_USER@$VPS_HOST" \
+            "set -e
+             cat > /etc/fail2ban/jail.local <<EOF
+[DEFAULT]
+bantime  = 10m
+findtime = 10m
+maxretry = 10
+backend  = systemd
+ignoreip = 127.0.0.1/8 ::1 ${WHITELIST_IP}
+
+[sshd]
+enabled = true
+port    = ssh
+EOF
+             systemctl restart fail2ban
+             sleep 2
+             fail2ban-client unban --all || true
+             fail2ban-client status sshd | head -20
+             echo '---ignoreip---'
+             grep ignoreip /etc/fail2ban/jail.local"
