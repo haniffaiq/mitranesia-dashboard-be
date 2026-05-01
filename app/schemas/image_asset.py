@@ -76,4 +76,4 @@ def require_image_source(url_value: str | None, base64_value: str | None) -> Non
 
 
 def resolve_image_source(url_value: str | None, base64_value: str | None) -> str:
-    return base64_value or url_value or ""
+    return url_value or base64_value or ""
