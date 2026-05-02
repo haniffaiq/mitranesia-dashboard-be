@@ -44,7 +44,10 @@ def format_indonesian_date(value: datetime | None) -> str:
     return f"{value.day:02d} {INDONESIAN_MONTHS[value.month]} {value.year}"
 
 
-def serialize_client_merchant(model: Merchant) -> ClientMerchant:
+def serialize_client_merchant(
+    model: Merchant,
+    review_summary: tuple[float, int] | None = None,
+) -> ClientMerchant:
     packages = [
         ClientMerchantPackage(
             id=str(item.id),
@@ -65,6 +68,7 @@ def serialize_client_merchant(model: Merchant) -> ClientMerchant:
     ]
     prices = [item.price for item in model.packages]
     rating = float(model.rating) if isinstance(model.rating, Decimal) else model.rating
+    review_avg, review_count = review_summary if review_summary else (None, 0)
     return ClientMerchant(
         id=str(model.id),
         name=model.name,
@@ -80,7 +84,24 @@ def serialize_client_merchant(model: Merchant) -> ClientMerchant:
         images=images,
         minPrice=min(prices) if prices else 0,
         maxPrice=max(prices) if prices else 0,
+        reviewAverage=review_avg,
+        reviewCount=review_count,
     )
+
+
+def get_merchant_review_summary(db: Session, merchant_id) -> tuple[float, int]:
+    """Hitung avg rating + count dari approved reviews. Return (None, 0) kalau ga ada."""
+    from sqlalchemy import func
+    from app.models.merchant_review import MerchantReview
+
+    row = db.execute(
+        select(func.avg(MerchantReview.rating), func.count(MerchantReview.id))
+        .where(MerchantReview.merchant_id == merchant_id, MerchantReview.status == "approved")
+    ).one()
+    avg, count = row
+    if not count:
+        return (None, 0)
+    return (round(float(avg), 2), int(count))
 
 
 def serialize_client_insight(model: InsightArticle) -> ClientInsightArticle:

@@ -40,3 +40,9 @@ class Merchant(TimestampMixin, Base):
         cascade="all, delete-orphan",
         order_by="MerchantImage.sort_order",
     )
+    reviews = relationship(
+        "MerchantReview",
+        back_populates="merchant",
+        cascade="all, delete-orphan",
+        order_by="MerchantReview.created_at.desc()",
+    )

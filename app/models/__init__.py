@@ -7,6 +7,7 @@ from app.models.insight_article import InsightArticle
 from app.models.merchant import Merchant
 from app.models.merchant_image import MerchantImage
 from app.models.merchant_package import MerchantPackage
+from app.models.merchant_review import MerchantReview
 from app.models.newsletter_subscriber import NewsletterSubscriber
 
 __all__ = [
@@ -19,5 +20,6 @@ __all__ = [
     "Merchant",
     "MerchantImage",
     "MerchantPackage",
+    "MerchantReview",
     "NewsletterSubscriber",
 ]

@@ -1,9 +1,14 @@
 from __future__ import annotations
 
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.dependencies.auth import get_db
+from app.models.merchant import Merchant
+from app.models.merchant_review import MerchantReview
 from app.schemas.client import (
     ClientCarouselSlide,
     ClientHome,
@@ -13,6 +18,7 @@ from app.schemas.client import (
     ClientMerchantList,
     ClientMerchantsFilters,
 )
+from app.schemas.merchant_review import ReviewCreate, ReviewRead
 from app.services.client import (
     build_client_home,
     build_merchant_filters,
@@ -20,6 +26,7 @@ from app.services.client import (
     find_client_merchant,
     get_active_carousels,
     get_active_merchants,
+    get_merchant_review_summary,
     get_published_insights,
     paginate_client_merchants,
     serialize_client_carousel,
@@ -101,7 +108,8 @@ def get_client_merchant(identifier: str, db: Session = Depends(get_db)):
     merchant = find_client_merchant(db, identifier)
     if not merchant or not merchant.is_active:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Merchant not found")
-    return serialize_client_merchant(merchant)
+    summary = get_merchant_review_summary(db, merchant.id)
+    return serialize_client_merchant(merchant, review_summary=summary)
 
 
 @router.get("/insights", response_model=list[ClientInsightArticle])
@@ -137,3 +145,59 @@ def get_client_insight(identifier: str, db: Session = Depends(get_db)):
     if not article:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Insight article not found")
     return serialize_client_insight(article)
+
+
+def _resolve_merchant_id(db: Session, identifier: str) -> uuid.UUID:
+    """Accept UUID or slug, return merchant.id (only active+not-deleted)."""
+    try:
+        candidate_uuid = uuid.UUID(identifier)
+        merchant = db.scalar(
+            select(Merchant).where(Merchant.id == candidate_uuid, Merchant.deleted_at.is_(None))
+        )
+    except ValueError:
+        merchant = db.scalar(
+            select(Merchant).where(Merchant.slug == identifier, Merchant.deleted_at.is_(None))
+        )
+    if merchant is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Merchant not found")
+    return merchant.id
+
+
+@router.get("/merchants/{identifier}/reviews", response_model=list[ReviewRead])
+def list_merchant_reviews(
+    identifier: str,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=50),
+    db: Session = Depends(get_db),
+):
+    merchant_id = _resolve_merchant_id(db, identifier)
+    rows = db.scalars(
+        select(MerchantReview)
+        .where(MerchantReview.merchant_id == merchant_id, MerchantReview.status == "approved")
+        .order_by(MerchantReview.created_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    ).all()
+    return [ReviewRead.model_validate(r) for r in rows]
+
+
+@router.post("/merchants/{identifier}/reviews", response_model=ReviewRead, status_code=status.HTTP_201_CREATED)
+def create_merchant_review(
+    identifier: str,
+    payload: ReviewCreate,
+    db: Session = Depends(get_db),
+):
+    merchant_id = _resolve_merchant_id(db, identifier)
+    review = MerchantReview(
+        merchant_id=merchant_id,
+        reviewer_name=payload.reviewer_name,
+        reviewer_email=payload.reviewer_email,
+        rating=payload.rating,
+        comment=payload.comment,
+        status="pending",
+        is_verified_mitra=False,
+    )
+    db.add(review)
+    db.commit()
+    db.refresh(review)
+    return ReviewRead.model_validate(review)

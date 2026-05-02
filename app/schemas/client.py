@@ -31,6 +31,8 @@ class ClientMerchant(APIModel):
     images: list[ClientMerchantImage] = []
     minPrice: int
     maxPrice: int
+    reviewAverage: float | None = None
+    reviewCount: int = 0
 
 
 class ClientInsightArticle(APIModel):

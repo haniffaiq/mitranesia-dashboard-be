@@ -14,6 +14,7 @@ from app.api.routes_client import router as client_router
 from app.api.routes_client_auth import router as client_auth_router
 from app.api.routes_client_leads import router as client_leads_router
 from app.api.routes_dashboard import router as dashboard_router
+from app.api.routes_dashboard_reviews import router as dashboard_reviews_router
 from app.api.routes_insights import router as insights_router
 from app.api.routes_merchants import router as merchants_router
 from app.api.routes_newsletter import client_router as newsletter_client_router, dashboard_router as newsletter_dashboard_router
@@ -96,6 +97,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(merchants_router, prefix="/api")
     app.include_router(insights_router, prefix="/api")
     app.include_router(admin_users_router, prefix="/api")
+    app.include_router(dashboard_reviews_router, prefix="/api")
     app.include_router(newsletter_client_router, prefix="/api")
     app.include_router(newsletter_dashboard_router, prefix="/api")
     app.include_router(sitemap_router)  # no /api prefix — served at root
