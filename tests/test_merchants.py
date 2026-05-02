@@ -72,5 +72,6 @@ def test_create_merchant_with_base64_logo(client, auth_headers):
     response = client.post("/api/dashboard/merchants", json=payload, headers=auth_headers)
     assert response.status_code == 201, response.text
     merchant = response.json()["data"]
-    assert merchant["logo_url"] == ""
-    assert merchant["logo_base64"] == IMAGE_BASE64
+    # base64 auto-materialized -> URL populated, base64 cleared
+    assert merchant["logo_url"].startswith("/uploads/cms/merchants/")
+    assert merchant["logo_base64"] in (None, "")

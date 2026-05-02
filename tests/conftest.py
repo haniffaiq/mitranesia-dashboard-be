@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import os
+import tempfile
 
 os.environ["DATABASE_URL"] = "sqlite:///./test_dashboard.db"
 os.environ["CREATE_TABLES_ON_START"] = "true"
 os.environ["JWT_SECRET_KEY"] = "test-secret-key-with-32-plus-bytes"
 os.environ["DEFAULT_SUPERADMIN_USERNAME"] = "superadmin"
 os.environ["DEFAULT_SUPERADMIN_PASSWORD"] = "superadmin123"
+os.environ.setdefault("UPLOAD_ROOT", tempfile.mkdtemp(prefix="mitranesia-uploads-"))
 
 import pytest
 from fastapi.testclient import TestClient

@@ -11,6 +11,7 @@ from app.dependencies.auth import get_db, require_roles
 from app.models.insight_article import InsightArticle
 from app.schemas.common import DetailResponse, ListResponse, MetaData
 from app.schemas.insight import InsightArticleCreate, InsightArticleRead, InsightArticleUpdate, InsightStatusUpdate
+from app.services.image_storage import materialize
 from app.services.serializers import serialize_insight
 
 router = APIRouter(prefix="/dashboard/insights", tags=["dashboard-insights"])
@@ -81,13 +82,18 @@ def list_insights(
 @router.post("", response_model=DetailResponse[InsightArticleRead], status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_roles("superadmin", "admin", "editor"))])
 def create_insight(payload: InsightArticleCreate, db: Session = Depends(get_db)):
     validate_unique_slug(db, payload.slug)
+    image_url, image_base64 = materialize(
+        str(payload.image) if payload.image else None,
+        payload.image_base64,
+        f"insights/{payload.slug}",
+    )
     article = InsightArticle(
         title=payload.title,
         slug=payload.slug,
         category=payload.category,
         author=payload.author,
-        image=str(payload.image) if payload.image else None,
-        image_base64=payload.image_base64,
+        image=image_url,
+        image_base64=image_base64,
         excerpt=payload.excerpt,
         read_time=payload.read_time,
         content=payload.content,
@@ -114,8 +120,13 @@ def update_insight(article_id: uuid.UUID, payload: InsightArticleUpdate, db: Ses
     article.slug = payload.slug
     article.category = payload.category
     article.author = payload.author
-    article.image = str(payload.image) if payload.image else None
-    article.image_base64 = payload.image_base64
+    image_url, image_base64 = materialize(
+        str(payload.image) if payload.image else None,
+        payload.image_base64,
+        f"insights/{payload.slug}",
+    )
+    article.image = image_url
+    article.image_base64 = image_base64
     article.excerpt = payload.excerpt
     article.read_time = payload.read_time
     article.content = payload.content

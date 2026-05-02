@@ -10,6 +10,7 @@ from app.dependencies.auth import get_db, require_roles
 from app.models.carousel_item import CarouselItem
 from app.schemas.carousel import CarouselItemCreate, CarouselItemRead, CarouselItemUpdate, CarouselStatusUpdate
 from app.schemas.common import DetailResponse, ListResponse, MetaData
+from app.services.image_storage import materialize
 from app.services.serializers import serialize_carousel
 
 router = APIRouter(prefix="/dashboard/carousels", tags=["dashboard-carousels"])
@@ -51,10 +52,15 @@ def list_carousels(
 
 @router.post("", response_model=DetailResponse[CarouselItemRead], status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_roles("superadmin", "admin", "editor"))])
 def create_carousel(payload: CarouselItemCreate, db: Session = Depends(get_db)):
+    image_url, image_base64 = materialize(
+        str(payload.image_url) if payload.image_url else None,
+        payload.image_base64,
+        f"carousels/{payload.title}",
+    )
     carousel = CarouselItem(
         title=payload.title,
-        image_url=str(payload.image_url) if payload.image_url else None,
-        image_base64=payload.image_base64,
+        image_url=image_url,
+        image_base64=image_base64,
         tag=payload.tag,
         icon=payload.icon,
         highlight=payload.highlight,
@@ -80,8 +86,13 @@ def get_carousel(carousel_id: uuid.UUID, db: Session = Depends(get_db)):
 def update_carousel(carousel_id: uuid.UUID, payload: CarouselItemUpdate, db: Session = Depends(get_db)):
     carousel = get_carousel_or_404(db, carousel_id)
     carousel.title = payload.title
-    carousel.image_url = str(payload.image_url) if payload.image_url else None
-    carousel.image_base64 = payload.image_base64
+    image_url, image_base64 = materialize(
+        str(payload.image_url) if payload.image_url else None,
+        payload.image_base64,
+        f"carousels/{payload.title}",
+    )
+    carousel.image_url = image_url
+    carousel.image_base64 = image_base64
     carousel.tag = payload.tag
     carousel.icon = payload.icon
     carousel.highlight = payload.highlight

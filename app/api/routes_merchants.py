@@ -12,6 +12,7 @@ from app.models.merchant_image import MerchantImage
 from app.models.merchant_package import MerchantPackage
 from app.schemas.common import DetailResponse, ListResponse, MetaData
 from app.schemas.merchant import MerchantCreate, MerchantRead, MerchantStatusUpdate, MerchantUpdate
+from app.services.image_storage import materialize
 from app.services.serializers import serialize_merchant
 
 router = APIRouter(prefix="/dashboard/merchants", tags=["dashboard-merchants"])
@@ -78,24 +79,30 @@ def sync_packages(merchant: Merchant, packages_payload: list) -> None:
 def sync_images(merchant: Merchant, images_payload: list) -> None:
     existing_by_id = {str(item.id): item for item in merchant.images}
     kept: list[MerchantImage] = []
+    gallery_prefix = f"merchants/{merchant.slug}/gallery"
 
     for item in images_payload:
+        url_value, base64_value = materialize(
+            str(item.image_url) if item.image_url else None,
+            item.image_base64,
+            gallery_prefix,
+        )
         item_id = getattr(item, "id", None)
         if item_id:
             image = existing_by_id.pop(item_id, None)
             if not image:
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"Image {item_id} not found")
             image.label = item.label
-            image.image_url = str(item.image_url) if item.image_url else None
-            image.image_base64 = item.image_base64
+            image.image_url = url_value
+            image.image_base64 = base64_value
             image.sort_order = item.sort_order
             kept.append(image)
         else:
             kept.append(
                 MerchantImage(
                     label=item.label,
-                    image_url=str(item.image_url) if item.image_url else None,
-                    image_base64=item.image_base64,
+                    image_url=url_value,
+                    image_base64=base64_value,
                     sort_order=item.sort_order,
                 )
             )
@@ -158,13 +165,34 @@ def list_merchants(
 @router.post("", response_model=DetailResponse[MerchantRead], status_code=status.HTTP_201_CREATED, dependencies=[Depends(require_roles("superadmin", "admin"))])
 def create_merchant(payload: MerchantCreate, db: Session = Depends(get_db)):
     validate_unique_merchant_slug(db, payload.slug)
+    logo_url, logo_base64 = materialize(
+        str(payload.logo_url) if payload.logo_url else None,
+        payload.logo_base64,
+        f"merchants/{payload.slug}",
+    )
+    gallery_prefix = f"merchants/{payload.slug}/gallery"
+    images = []
+    for item in payload.images:
+        img_url, img_base64 = materialize(
+            str(item.image_url) if item.image_url else None,
+            item.image_base64,
+            gallery_prefix,
+        )
+        images.append(
+            MerchantImage(
+                label=item.label,
+                image_url=img_url,
+                image_base64=img_base64,
+                sort_order=item.sort_order,
+            )
+        )
     merchant = Merchant(
         name=payload.name,
         slug=payload.slug,
         category=payload.category,
         type=payload.type,
-        logo_url=str(payload.logo_url) if payload.logo_url else None,
-        logo_base64=payload.logo_base64,
+        logo_url=logo_url,
+        logo_base64=logo_base64,
         bep_months=payload.bep_months,
         rating=payload.rating,
         is_active=payload.is_active,
@@ -180,15 +208,7 @@ def create_merchant(payload: MerchantCreate, db: Session = Depends(get_db)):
             )
             for item in payload.packages
         ],
-        images=[
-            MerchantImage(
-                label=item.label,
-                image_url=str(item.image_url) if item.image_url else None,
-                image_base64=item.image_base64,
-                sort_order=item.sort_order,
-            )
-            for item in payload.images
-        ],
+        images=images,
     )
     db.add(merchant)
     db.commit()
@@ -211,8 +231,13 @@ def update_merchant(merchant_id: uuid.UUID, payload: MerchantUpdate, db: Session
     merchant.slug = payload.slug
     merchant.category = payload.category
     merchant.type = payload.type
-    merchant.logo_url = str(payload.logo_url) if payload.logo_url else None
-    merchant.logo_base64 = payload.logo_base64
+    logo_url, logo_base64 = materialize(
+        str(payload.logo_url) if payload.logo_url else None,
+        payload.logo_base64,
+        f"merchants/{payload.slug}",
+    )
+    merchant.logo_url = logo_url
+    merchant.logo_base64 = logo_base64
     merchant.bep_months = payload.bep_months
     merchant.rating = payload.rating
     merchant.is_active = payload.is_active

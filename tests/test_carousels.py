@@ -61,9 +61,9 @@ def test_dashboard_carousel_accepts_base64_image(client, auth_headers):
     response = client.post("/api/dashboard/carousels", json=payload, headers=auth_headers)
     assert response.status_code == 201, response.text
     carousel = response.json()["data"]
-    assert carousel["image_url"] == ""
-    assert carousel["image_base64"] == IMAGE_BASE64
+    assert carousel["image_url"].startswith("/uploads/cms/carousels/")
+    assert carousel["image_base64"] in (None, "")
 
     client_response = client.get("/api/client/carousels")
     assert client_response.status_code == 200, client_response.text
-    assert client_response.json()[0]["image"] == IMAGE_BASE64
+    assert client_response.json()[0]["image"].startswith("/uploads/cms/carousels/")
